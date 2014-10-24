@@ -110,7 +110,9 @@ class TestOFAgentFlows(ofa_test_base.OFATestBase):
         br = self.br
         with mock.patch.object(br, '_send_msg') as sendmsg:
             br.install_tunnel_output(table_id=110, network=111,
-                                     segmentation_id=112, ports=[113, 114],
+                                     segmentation_id=112,
+                                     port=113,
+                                     remote_ips=['192.0.2.8', '192.0.2.9'],
                                      goto_next=True)
         (dp, ofp, ofpp) = br._get_dp()
         call = mock.call
@@ -123,8 +125,12 @@ class TestOFAgentFlows(ofa_test_base.OFATestBase):
                             ofp.OFPIT_APPLY_ACTIONS,
                             [
                                 ofpp.OFPActionSetField(tunnel_id=112),
+                                ofpp.OFPActionSetField(
+                                    tun_ipv4_dst='192.0.2.8'),
                                 ofpp.OFPActionOutput(port=113),
-                                ofpp.OFPActionOutput(port=114)
+                                ofpp.OFPActionSetField(
+                                    tun_ipv4_dst='192.0.2.9'),
+                                ofpp.OFPActionOutput(port=113)
                             ]
                         ),
                         ofpp.OFPInstructionGotoTable(table_id=111)
@@ -257,13 +263,15 @@ class TestOFAgentFlows(ofa_test_base.OFATestBase):
     def test_check_in_port_add_tunnel_port(self):
         br = self.br
         with mock.patch.object(br, '_send_msg') as sendmsg:
-            br.check_in_port_add_tunnel_port(network_type="gre", port=99)
+            br.check_in_port_add_tunnel_port(network_type="gre", port=99,
+                                             local_ip='192.0.2.11')
         (dp, ofp, ofpp) = br._get_dp()
         call = mock.call
         expected_calls = [
             call(ofpp.OFPFlowMod(dp,
                  instructions=[ofpp.OFPInstructionGotoTable(table_id=1)],
-                 match=ofpp.OFPMatch(in_port=99), priority=1, table_id=0))
+                 match=ofpp.OFPMatch(in_port=99, tun_ipv4_dst='192.0.2.11'),
+                 priority=1, table_id=0))
         ]
         sendmsg.assert_has_calls(expected_calls)
 

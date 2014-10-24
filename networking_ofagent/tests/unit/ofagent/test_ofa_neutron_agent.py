@@ -24,7 +24,6 @@ import contextlib
 import copy
 
 import mock
-import netaddr
 from oslo_config import cfg
 from oslo_utils import importutils
 import testtools
@@ -216,9 +215,8 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         self.agent.int_br.set_dp(self.int_dp)
         self.agent.int_ofports['phys-net1'] = 666
 
-    def _create_tunnel_port_name(self, tunnel_ip, tunnel_type):
-        tunnel_ip_hex = '%08x' % netaddr.IPAddress(tunnel_ip, version=4)
-        return '%s-%s' % (tunnel_type, tunnel_ip_hex)
+    def _create_tunnel_port_name(self, tunnel_type):
+        return '_ofa-tun-%s' % tunnel_type
 
     def mock_scan_ports(self, port_set=None, registered_ports=None,
                         updated_ports=None, port_tags_dict=None):
@@ -465,28 +463,23 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         self.lvms = [LVM(net='net1', vlan=11, segid=21, ip='1.1.1.1'),
                      LVM(net='net2', vlan=12, segid=22, ip='2.2.2.2')]
         self.tunnel_type = 'gre'
-        self.tun_name1 = self._create_tunnel_port_name(self.lvms[0].ip,
-                                                       self.tunnel_type)
-        self.tun_name2 = self._create_tunnel_port_name(self.lvms[1].ip,
-                                                       self.tunnel_type)
+        self.tun_name = self._create_tunnel_port_name(self.tunnel_type)
         if network_type is None:
             network_type = self.tunnel_type
         lvm1 = mock.Mock()
         lvm1.network_type = network_type
         lvm1.vlan = self.lvms[0].vlan
         lvm1.segmentation_id = self.lvms[0].segid
-        lvm1.tun_ofports = set([1])
+        lvm1.tun_remote_ips = set(self.lvms[x].ip for x in [0])
         lvm2 = mock.Mock()
         lvm2.network_type = network_type
         lvm2.vlan = self.lvms[1].vlan
         lvm2.segmentation_id = self.lvms[1].segid
-        lvm2.tun_ofports = set([1, 2])
+        lvm2.tun_remote_ips = set(self.lvms[x].ip for x in [0, 1])
         self.agent.tunnel_types = [self.tunnel_type]
         self.agent.local_vlan_map = {self.lvms[0].net: lvm1,
                                      self.lvms[1].net: lvm2}
-        self.agent.tun_ofports = {self.tunnel_type:
-                                  {self.lvms[0].ip: 1,
-                                   self.lvms[1].ip: 2}}
+        self.agent.tun_ofports = {self.tunnel_type: 1}
 
     def test_fdb_ignore_network(self):
         self._prepare_l2_pop_ofports()
@@ -539,8 +532,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             self.agent.fdb_add(None, fdb_entry)
             self.assertEqual(2, install_fn.call_count)
             expected_calls = [
-                mock.call(7, 11, 21, set([2]), eth_dst='mac', goto_next=False),
-                mock.call(10, 11, 21, set([1, 2]), goto_next=True)
+                mock.call(7, 11, 21, 1, set(self.lvms[x].ip for x in [1]),
+                          eth_dst='mac', goto_next=False),
+                mock.call(10, 11, 21, 1, set(self.lvms[x].ip for x in [0, 1]),
+                          goto_next=True)
             ]
             install_fn.assert_has_calls(expected_calls)
             self.assertFalse(delete_fn.called)
@@ -559,15 +554,14 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             mock.patch.object(self.agent.int_br, 'delete_tunnel_output'),
         ) as (install_fn, delete_fn):
             self.agent.fdb_remove(None, fdb_entry)
-            install_fn.assert_called_once_with(10, 12, 22, set([1]),
+            install_fn.assert_called_once_with(10, 12, 22, 1,
+                                               set([self.lvms[0].ip]),
                                                goto_next=True)
             delete_fn.assert_called_once_with(7, 12, eth_dst='mac')
 
     def test_fdb_add_port(self):
         self._prepare_l2_pop_ofports()
         tunnel_ip = '10.10.10.10'
-        tun_name = self._create_tunnel_port_name(tunnel_ip,
-                                                 self.tunnel_type)
         fdb_entry = {self.lvms[0].net:
                      {'network_type': self.tunnel_type,
                       'segment_id': 'tun1',
@@ -579,8 +573,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             fdb_entry[self.lvms[0].net]['ports'][tunnel_ip] = [
                 l2pop_rpc.PortInfo('mac', 'ip')]
             self.agent.fdb_add(None, fdb_entry)
-            add_tun_fn.assert_called_with(
-                self.agent.int_br, tun_name, tunnel_ip, self.tunnel_type)
+            self.assertFalse(add_tun_fn.called)
 
     def test_fdb_del_port(self):
         self._prepare_l2_pop_ofports()
@@ -591,7 +584,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         with mock.patch.object(self.agent.int_br,
                                'delete_port') as del_port_fn:
             self.agent.fdb_remove(None, fdb_entry)
-            del_port_fn.assert_called_once_with(self.tun_name2)
+            self.assertFalse(del_port_fn.called)
 
     def test_add_arp_table_entry(self):
         self._prepare_l2_pop_ofports()
@@ -617,8 +610,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             ]
             self.ryuapp.add_arp_table_entry.assert_has_calls(calls,
                                                              any_order=True)
-            setup_tun_fn.assert_called_once_with(self.agent.int_br,
-                                                 '192.0.2.1', 'gre')
+            self.assertFalse(setup_tun_fn.called)
 
     def _test_add_arp_table_entry_non_tunnel(self, network_type):
         self._prepare_l2_pop_ofports(network_type=network_type)
@@ -679,7 +671,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             ]
             self.ryuapp.del_arp_table_entry.assert_has_calls(calls,
                                                              any_order=True)
-            cleanup_tun_fn.assert_called_once_with(self.agent.int_br, 1, 'gre')
+            self.assertEqual(2, cleanup_tun_fn.call_count)
 
     def _test_del_arp_table_entry_non_tunnel(self, network_type):
         self._prepare_l2_pop_ofports(network_type=network_type)
@@ -725,14 +717,6 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             self.agent.reclaim_local_vlan(self.lvms[0].net)
             self.assertFalse(del_port_fn.called)
 
-    def test_recl_lv_port_to_remove(self):
-        self._prepare_l2_pop_ofports()
-        self.agent.enable_tunneling = True
-        with mock.patch.object(self.agent.int_br,
-                               'delete_port') as del_port_fn:
-            self.agent.reclaim_local_vlan(self.lvms[1].net)
-            del_port_fn.assert_called_once_with(self.tun_name2)
-
     def test__setup_tunnel_port_error_negative(self):
         with contextlib.nested(
             mock.patch.object(self.agent.int_br, 'add_tunnel_port',
@@ -740,21 +724,20 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             mock.patch.object(self.mod_agent.LOG, 'error')
         ) as (add_tunnel_port_fn, log_error_fn):
             ofport = self.agent._setup_tunnel_port(
-                self.agent.int_br, 'gre-1', 'remote_ip', p_const.TYPE_GRE)
+                self.agent.int_br, 'gre-1', p_const.TYPE_GRE)
             add_tunnel_port_fn.assert_called_once_with(
-                'gre-1', 'remote_ip', self.agent.local_ip, p_const.TYPE_GRE,
+                'gre-1', 'flow', '0', p_const.TYPE_GRE,
                 self.agent.vxlan_udp_port, self.agent.dont_fragment)
             log_error_fn.assert_called_once_with(
-                _("Failed to set-up %(type)s tunnel port to %(ip)s"),
-                {'type': p_const.TYPE_GRE, 'ip': 'remote_ip'})
+                _("Failed to set-up %(type)s tunnel port"),
+                {'type': p_const.TYPE_GRE})
             self.assertEqual(ofport, 0)
 
     def test_setup_tunnel_port_returns_zero_for_failed_port_add(self):
         with mock.patch.object(self.agent.int_br, 'add_tunnel_port',
                                return_value=ovs_lib.INVALID_OFPORT):
             result = self.agent._setup_tunnel_port(self.agent.int_br, 'gre-1',
-                                                  'remote_ip',
-                                                  p_const.TYPE_GRE)
+                                                   p_const.TYPE_GRE)
         self.assertEqual(0, result)
 
     def test_tunnel_sync(self):
