@@ -16,7 +16,7 @@
 
 
 import mock
-from oslo.utils import importutils
+from oslo_utils import importutils
 
 import networking_ofagent.plugins.ofagent.agent.metadata as meta
 from networking_ofagent.tests.unit.ofagent import ofa_test_base

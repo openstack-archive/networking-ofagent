@@ -16,7 +16,7 @@
 
 
 import mock
-from oslo.utils import importutils
+from oslo_utils import importutils
 
 from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
