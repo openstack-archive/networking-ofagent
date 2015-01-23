@@ -18,12 +18,12 @@
 import mock
 from oslo.utils import importutils
 
-from neutron.tests.unit.ofagent import ofa_test_base
+from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
 
 class TestOFAgentFlows(ofa_test_base.OFATestBase):
 
-    _MOD = 'neutron.plugins.ofagent.agent.ofswitch'
+    _MOD = 'networking_ofagent.plugins.ofagent.agent.ofswitch'
 
     def setUp(self):
         super(TestOFAgentFlows, self).setUp()

@@ -32,7 +32,7 @@ check_opinionated_shell () {
     # If you cannot avoid the use of bash, please change the EXPECTED var below.
     OBSERVED=$(grep -E '^([[:space:]]*[^#[:space:]]|#!).*bash' \
                tox.ini tools/* | wc -l)
-    EXPECTED=3
+    EXPECTED=2
     if [ ${EXPECTED} -ne ${OBSERVED} ]; then
         echo "Bash usage has been detected!" >>$FAILURES
     fi
@@ -53,7 +53,7 @@ check_pot_files_errors () {
     # transifex since our po files contain duplicate entries where
     # obsolete entries duplicate normal entries. Prevent obsolete
     # entries to slip in
-    find neutron -type f -regex '.*\.pot?' \
+    find networking_ofagent -type f -regex '.*\.pot?' \
                  -print0|xargs -0 -n 1 msgfmt --check-format \
                  -o /dev/null
     if [ "$?" -ne 0 ]; then

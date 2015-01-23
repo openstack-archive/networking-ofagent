@@ -21,11 +21,11 @@ import copy
 import mock
 from oslo.utils import importutils
 
-import neutron.plugins.ofagent.agent.metadata as meta
-from neutron.tests.unit.ofagent import ofa_test_base
+import networking_ofagent.plugins.ofagent.agent.metadata as meta
+from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
 
-_OFALIB_NAME = 'neutron.plugins.ofagent.agent.arp_lib'
+_OFALIB_NAME = 'networking_ofagent.plugins.ofagent.agent.arp_lib'
 
 
 class OFAAgentTestCase(ofa_test_base.OFAAgentTestBase):

@@ -153,9 +153,10 @@ from ryu.lib.packet import arp
 from ryu.ofproto import ether
 
 from neutron.plugins.common import constants as p_const
-import neutron.plugins.ofagent.agent.metadata as meta
-from neutron.plugins.ofagent.agent import ofswitch
-from neutron.plugins.ofagent.agent import tables
+
+import networking_ofagent.plugins.ofagent.agent.metadata as meta
+from networking_ofagent.plugins.ofagent.agent import ofswitch
+from networking_ofagent.plugins.ofagent.agent import tables
 
 
 class OFAgentIntegrationBridge(ofswitch.OpenFlowSwitch):

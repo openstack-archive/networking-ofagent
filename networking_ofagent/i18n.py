@@ -14,7 +14,7 @@
 
 from oslo import i18n
 
-_translators = i18n.TranslatorFactory(domain='neutron')
+_translators = i18n.TranslatorFactory(domain='networking_ofagent')
 
 # The primary translation function using the well-known name "_"
 _ = _translators.primary

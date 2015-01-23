@@ -25,7 +25,8 @@ from ryu.lib.packet import vlan
 from neutron.common import log
 from neutron.i18n import _LI
 from neutron.openstack.common import log as logging
-import neutron.plugins.ofagent.agent.metadata as meta
+
+import networking_ofagent.plugins.ofagent.agent.metadata as meta
 
 
 LOG = logging.getLogger(__name__)

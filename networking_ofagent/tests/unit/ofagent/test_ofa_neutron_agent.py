@@ -33,7 +33,8 @@ from neutron.agent.linux import ovs_lib
 from neutron.common import constants as n_const
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
-from neutron.tests.unit.ofagent import ofa_test_base
+
+from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
 
 NOTIFIER = ('neutron.plugins.ml2.rpc.AgentNotifierApi')

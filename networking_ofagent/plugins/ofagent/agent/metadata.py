@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.plugins.ofagent.agent import constants as const
+from networking_ofagent.plugins.ofagent.agent import constants as const
 
 
 # metadata mask

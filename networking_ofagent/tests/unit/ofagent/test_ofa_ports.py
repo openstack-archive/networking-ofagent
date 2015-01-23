@@ -18,8 +18,9 @@
 import mock
 
 from neutron.common import constants as n_const
-from neutron.plugins.ofagent.agent import ports
 from neutron.tests import base
+
+from networking_ofagent.plugins.ofagent.agent import ports
 
 
 class TestOFAgentPorts(base.BaseTestCase):

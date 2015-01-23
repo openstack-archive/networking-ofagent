@@ -51,7 +51,7 @@ class OFATestBase(base.BaseTestCase):
 
 class OFAAgentTestBase(OFATestBase):
 
-    _AGENT_NAME = 'neutron.plugins.ofagent.agent.ofa_neutron_agent'
+    _AGENT_NAME = 'networking_ofagent.plugins.ofagent.agent.ofa_neutron_agent'
 
     def setUp(self):
         super(OFAAgentTestBase, self).setUp()
@@ -68,5 +68,6 @@ class OFAAgentTestBase(OFATestBase):
             cfg.IntOpt('ofp-tcp-listen-port', default=6633,
                        help='openflow tcp listen port')
         ])
-        cfg.CONF.set_override('root_helper', 'fake_helper', group='AGENT')
+        # TODO(yamamoto): revisit later
+        #cfg.CONF.set_override('root_helper', 'fake_helper', group='AGENT')
         super(OFATestBase, self).setup_config()

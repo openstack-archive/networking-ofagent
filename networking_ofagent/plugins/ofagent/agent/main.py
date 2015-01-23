@@ -35,4 +35,6 @@ def main():
     if ryu_cfg.CONF is not cfg.CONF:
         ryu_cfg.CONF(project='ryu', args=[])
     common_config.setup_logging()
-    AppManager.run_apps(['neutron.plugins.ofagent.agent.ofa_neutron_agent'])
+    AppManager.run_apps([
+        'networking_ofagent.plugins.ofagent.agent.ofa_neutron_agent'
+    ])

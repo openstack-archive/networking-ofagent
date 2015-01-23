@@ -42,20 +42,22 @@ from neutron.common import log
 from neutron.common import topics
 from neutron.common import utils as n_utils
 from neutron import context
-from neutron.i18n import _LE, _LI, _LW
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
 from neutron.plugins.common import constants as p_const
-from neutron.plugins.ofagent.agent import arp_lib
-from neutron.plugins.ofagent.agent import constants as ofa_const
-from neutron.plugins.ofagent.agent import flows
-from neutron.plugins.ofagent.agent import ports
-from neutron.plugins.ofagent.agent import tables
 from neutron.plugins.openvswitch.common import constants
+
+from networking_ofagent.i18n import _LE, _LI, _LW
+from networking_ofagent.plugins.ofagent.agent import arp_lib
+from networking_ofagent.plugins.ofagent.agent import constants as ofa_const
+from networking_ofagent.plugins.ofagent.agent import flows
+from networking_ofagent.plugins.ofagent.agent import ports
+from networking_ofagent.plugins.ofagent.agent import tables
 
 
 LOG = logging.getLogger(__name__)
-cfg.CONF.import_group('AGENT', 'neutron.plugins.ofagent.common.config')
+cfg.CONF.import_group('AGENT',
+                      'networking_ofagent.plugins.ofagent.common.config')
 
 
 # A class to represent a VIF (i.e., a port that has 'iface-id' and 'vif-mac'
