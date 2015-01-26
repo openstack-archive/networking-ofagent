@@ -3,6 +3,7 @@
 # process, which may cause wedges in the gate later.
 pbr>=0.6,!=0.7,<1.0
 Babel>=1.3
+ryu>=3.17
 
 # XXX needs to clean up
 -e git://git.openstack.org/openstack/neutron.git#egg=neutron
