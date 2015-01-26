@@ -55,7 +55,7 @@ check_pot_files_errors () {
     # entries to slip in
     find networking_ofagent -type f -regex '.*\.pot?' \
                  -print0|xargs -0 -n 1 msgfmt --check-format \
-                 -o /dev/null
+                 -o /dev/null /dev/null
     if [ "$?" -ne 0 ]; then
         echo "PO files syntax is not correct!" >>$FAILURES
     fi
