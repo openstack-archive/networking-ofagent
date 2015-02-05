@@ -20,7 +20,8 @@ from oslo.config import cfg
 from oslo.utils import importutils
 
 from neutron.tests import base
-from neutron.tests.unit.ofagent import fake_oflib
+
+from networking_ofagent.tests.unit.ofagent import fake_oflib
 
 
 class OFATestBase(base.BaseTestCase):
