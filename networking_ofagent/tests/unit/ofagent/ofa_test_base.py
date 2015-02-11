@@ -69,6 +69,4 @@ class OFAAgentTestBase(OFATestBase):
             cfg.IntOpt('ofp-tcp-listen-port', default=6633,
                        help='openflow tcp listen port')
         ])
-        # TODO(yamamoto): revisit later
-        #cfg.CONF.set_override('root_helper', 'fake_helper', group='AGENT')
         super(OFATestBase, self).setup_config()
