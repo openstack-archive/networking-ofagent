@@ -29,7 +29,6 @@ OFA_XTRACE=$(set +o | grep xtrace)
 set +o xtrace
 
 source $TOP_DIR/lib/neutron_plugins/ovs_base
-source $TOP_DIR/lib/neutron_thirdparty/ryu  # for RYU_DIR, install_ryu, etc
 
 function neutron_plugin_create_nova_conf {
     _neutron_ovs_base_configure_nova_vif_driver
