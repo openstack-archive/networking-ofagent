@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Code-Review-1: Terry Wilson <twilson@redhat.com>
+Code-Review+2: YAMAMOTO Takashi <yamamoto@valinux.co.jp>
+Code-Review+2: fumihiko kakuma <kakuma@valinux.co.jp>
+Workflow+1: fumihiko kakuma <kakuma@valinux.co.jp>
+Verified+1: Ryu CI <ryu-openstack-review@lists.sourceforge.net>
+Submitted-by: Jenkins
+Submitted-at: Mon, 23 Feb 2015 03:14:32 +0000
+Reviewed-on: https://review.openstack.org/157725
+Project: stackforge/networking-ofagent
+Branch: refs/heads/master
