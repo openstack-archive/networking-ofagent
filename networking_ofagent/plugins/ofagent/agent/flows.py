@@ -23,12 +23,13 @@ OpenFlow1.3 flow table for OFAgent
 * legends
  xxx: network id  (agent internal use)
  yyy: segment id  (vlan id, gre key, ...)
- a,b,c: tunnel port  (tun_ofports, map[net_id].tun_ofports)
+ a: tunnel port  (tun_ofports)
  i,j,k: vm port  (map[net_id].vif_ports[vif_id].ofport)
  x,y,z: physical port  (int_ofports)
  N: tunnel type  (0 for TYPE_GRE, 1 for TYPE_xxx, ...)
  iii: unknown ip address
  uuu: unicast l2 address
+ rrr, sss, ttt: tunnel peer's ip address
 
 * tables (in order)
     CHECK_IN_PORT
@@ -52,7 +53,7 @@ OpenFlow1.3 flow table for OFAgent
    TYPE_GRE
    for each tunnel ports:
       // check_in_port_add_tunnel_port, check_in_port_delete_port
-      in_port=a, goto(TUNNEL_IN+N)
+      in_port=a,tun_ipv4_dst=local_ip, goto(TUNNEL_IN+N)
    TYPE_VLAN
    for each networks ports:
       // provision_tenant_physnet, reclaim_tenant_physnet
@@ -90,7 +91,8 @@ OpenFlow1.3 flow table for OFAgent
    TYPE_GRE
    // !FLOODING_ENTRY
    // install_tunnel_output, delete_tunnel_output
-   metadata=LOCAL|xxx,eth_dst=uuu  set_tunnel(yyy),output:a
+   metadata=LOCAL|xxx,eth_dst=uuu  set_field:rrr->tun_ipv4_dst, \
+                                   set_tunnel(yyy),output:a
 
    default goto(next table)
 
@@ -115,7 +117,11 @@ OpenFlow1.3 flow table for OFAgent
    for each networks:
       // FLOODING_ENTRY
       // install_tunnel_output, delete_tunnel_output
-      metadata=LOCAL|xxx, set_tunnel(yyy),output:a,b,c,goto(next table)
+      metadata=LOCAL|xxx, set_tunnel(yyy),\
+                          set_field:rrr->tun_ipv4_dst,output:a, \
+                          set_field:sss->tun_ipv4_dst,output:a, \
+                          set_field:ttt->tun_ipv4_dst,output:a, \
+                          goto(next table)
 
    default goto(next table)
 
@@ -148,6 +154,8 @@ OpenFlow1.3 flow table for OFAgent
 *** we use metadata instead of "internal" VLANs
 *** we don't want to use NX learn action
 """
+
+import itertools
 
 from ryu.lib.packet import arp
 from ryu.ofproto import ether
@@ -200,12 +208,16 @@ class OFAgentIntegrationBridge(ofswitch.OpenFlowSwitch):
 
     def install_tunnel_output(self, table_id,
                               network, segmentation_id,
-                              ports, goto_next, **additional_matches):
+                              port, remote_ips,
+                              goto_next, **additional_matches):
         (dp, ofp, ofpp) = self._get_dp()
         match = ofpp.OFPMatch(metadata=meta.mk_metadata(network, meta.LOCAL),
                               **additional_matches)
         actions = [ofpp.OFPActionSetField(tunnel_id=segmentation_id)]
-        actions += [ofpp.OFPActionOutput(port=p) for p in ports]
+        actions += itertools.chain.from_iterable([[
+            ofpp.OFPActionSetField(tun_ipv4_dst=ip),
+            ofpp.OFPActionOutput(port=port)
+        ] for ip in remote_ips])
         instructions = [
             ofpp.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, actions),
         ]
@@ -311,9 +323,9 @@ class OFAgentIntegrationBridge(ofswitch.OpenFlowSwitch):
         self.delete_flows(table_id=tables.PHYS_FLOOD,
                           metadata=meta.mk_metadata(network))
 
-    def check_in_port_add_tunnel_port(self, network_type, port):
+    def check_in_port_add_tunnel_port(self, network_type, port, local_ip):
         (dp, _ofp, ofpp) = self._get_dp()
-        match = ofpp.OFPMatch(in_port=port)
+        match = ofpp.OFPMatch(in_port=port, tun_ipv4_dst=local_ip)
         instructions = [
             ofpp.OFPInstructionGotoTable(
                 table_id=tables.TUNNEL_IN[network_type])
