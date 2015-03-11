@@ -15,6 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
+
 from ryu.app.ofctl import api as ryu_api
 from ryu.lib import dpid as dpid_lib
 from ryu.lib.packet import arp
@@ -24,7 +26,6 @@ from ryu.lib.packet import vlan
 
 from neutron.common import log
 from neutron.i18n import _LI
-from neutron.openstack.common import log as logging
 
 import networking_ofagent.plugins.ofagent.agent.metadata as meta
 
