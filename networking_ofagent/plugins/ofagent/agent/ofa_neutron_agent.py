@@ -1,6 +1,6 @@
 # Copyright (C) 2014,2015 VA Linux Systems Japan K.K.
 # Copyright (C) 2014,2015 YAMAMOTO Takashi <yamamoto at valinux co jp>
-# Copyright (C) 2014 Fumihiko Kakuma <kakuma at valinux co jp>
+# Copyright (C) 2014,2015 Fumihiko Kakuma <kakuma at valinux co jp>
 # All Rights Reserved.
 #
 # Based on openvswitch agent.
@@ -51,6 +51,7 @@ from networking_ofagent.i18n import _LE, _LI, _LW
 from networking_ofagent.plugins.ofagent.agent import arp_lib
 from networking_ofagent.plugins.ofagent.agent import constants as ofa_const
 from networking_ofagent.plugins.ofagent.agent import flows
+from networking_ofagent.plugins.ofagent.agent import monitor
 from networking_ofagent.plugins.ofagent.agent import ports
 from networking_ofagent.plugins.ofagent.agent import tables
 
@@ -134,6 +135,7 @@ class OFANeutronAgentRyuApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(OFANeutronAgentRyuApp, self).__init__(*args, **kwargs)
         self.arplib = arp_lib.ArpLib(self)
+        self.monitor = monitor.PortMonitor()
 
     def start(self):
         super(OFANeutronAgentRyuApp, self).start()
@@ -165,6 +167,13 @@ class OFANeutronAgentRyuApp(app_manager.RyuApp):
 
     def del_arp_table_entry(self, network, ip):
         self.arplib.del_arp_table_entry(network, ip)
+
+    @handler.set_ev_cls(ofp_event.EventOFPPortStatus, handler.MAIN_DISPATCHER)
+    def _port_status_handler(self, ev):
+        self.monitor.port_status_handler(ev)
+
+    def get_port_status_list(self):
+        return self.monitor.get_port_status_list()
 
 
 class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
@@ -289,6 +298,20 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             heartbeat = loopingcall.FixedIntervalLoopingCall(
                 self._report_state)
             heartbeat.start(interval=report_interval)
+
+    def _send_set_async(self, br):
+        """Set asynchronous configuration message for the given bridge."""
+        datapath = br.datapath
+        ofp = datapath.ofproto
+        ofpp = datapath.ofproto_parser
+        packet_in_mask = 1 << ofp.OFPR_ACTION | 1 << ofp.OFPR_INVALID_TTL
+        port_status_mask = (1 << ofp.OFPPR_ADD | 1 << ofp.OFPPR_DELETE)
+        flow_removed_mask = 0
+        msg = ofpp.OFPSetAsync(datapath,
+                               [packet_in_mask, 0],
+                               [port_status_mask, 0],
+                               [flow_removed_mask, 0])
+        ryu_api.send_msg(app=self.ryuapp, msg=msg)
 
     def _get_ports(self, br):
         """Generate ports.Port instances for the given bridge."""
@@ -587,6 +610,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         br = self.int_br
         br.setup_ofp()
         br.setup_default_table()
+        self._send_set_async(br)
 
     def setup_physical_interfaces(self, interface_mappings):
         """Setup the physical network interfaces.
@@ -623,6 +647,43 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         # Remove all the known ports not found on the integration bridge
         port_info['removed'] = registered_ports - cur_ports
         return port_info
+
+    def _check_port_status_list(self, port_status_list, port_info):
+        """Check if port-no change is occurred.
+
+        Check if has operations which port-no change is occurred in list of
+        port status messages. And adds a target port to an updated set.
+
+        :param port_status_list: list of port status messages
+        :param port_info: set of a port names removed and updated
+        """
+        check_ports_all = {}
+        check_ports = {}
+        check_ports_set = set()
+        for ps in port_status_list:
+            if ps.reason == 'add' and ps.name in check_ports_all:
+                ps_mod = check_ports_all[ps.name]._replace(reason='mod')
+                check_ports_all[ps.name] = ps_mod
+            if ps.reason == 'del':
+                check_ports_all[ps.name] = ps
+        for name, ps in check_ports_all.items():
+            if (ps.reason == 'mod' and
+               ('removed' not in port_info or
+                name not in port_info['removed'])):
+                check_ports[name] = ps
+                check_ports_set.add(name)
+        LOG.debug("Agent daemon_loop check_ports: %(check_ports)s "
+                  "check_ports_set: %(check_ports_set)s "
+                  "check_ports_all: %(check_ports_all)s",
+                  {'check_ports': check_ports,
+                   'check_ports_set': check_ports_set,
+                   'check_ports_all': check_ports_all})
+        if check_ports_set:
+            if 'updated' in port_info:
+                port_info['updated'] |= check_ports_set
+            else:
+                port_info['updated'] = check_ports_set
+        return check_ports
 
     def treat_vif_port(self, vif_port, port_id, network_id, network_type,
                        physical_network, segmentation_id, admin_state_up):
@@ -681,7 +742,18 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         # We only have one port per network_type.
         pass
 
-    def treat_devices_added_or_updated(self, devices):
+    def _repair_ofport_change(self, port, net_uuid):
+        LOG.debug("Repair port: %(port)s net-id: %(netid)s",
+                  {'port': port, 'netid': net_uuid})
+        if net_uuid not in self.local_vlan_map:
+            LOG.info(_LI("_repair_ofport_change() net_uuid %s not in "
+                         "local_vlan_map"), net_uuid)
+            return
+        lvm = self.local_vlan_map[net_uuid]
+        self.int_br.check_in_port_delete_port(port.ofport)
+        self.int_br.local_out_delete_port(lvm.vlan, port.vif_mac)
+
+    def treat_devices_added_or_updated(self, devices, check_ports):
         resync = False
         all_ports = dict((p.normalized_port_name(), p) for p in
                          self._get_ports(self.int_br) if p.is_neutron_port())
@@ -704,6 +776,10 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                           {'device': device, 'e': e})
                 resync = True
                 continue
+            if device in check_ports:
+                LOG.debug("Repair ofport changed port %s", port)
+                ps = check_ports[device]
+                self._repair_ofport_change(ps.port, details['network_id'])
             if 'port_id' in details:
                 LOG.info(_LI("Port %(device)s updated. Details: %(details)s"),
                          {'device': device, 'details': details})
@@ -749,7 +825,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             self.port_unbound(device)
         return resync
 
-    def process_network_ports(self, port_info):
+    def process_network_ports(self, port_info, check_ports):
         resync_add = False
         resync_removed = False
         # If there is an exception while processing security groups ports
@@ -766,7 +842,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         if devices_added_updated:
             start = time.time()
             resync_add = self.treat_devices_added_or_updated(
-                devices_added_updated)
+                devices_added_updated, check_ports)
             LOG.debug("process_network_ports - iteration:%(iter_num)d - "
                       "treat_devices_added_or_updated completed "
                       "in %(elapsed).3f",
@@ -838,6 +914,10 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                 self.updated_ports = set()
                 port_info = self.scan_ports(ports, updated_ports_copy)
                 ports = port_info['current']
+                # In the following calling port_info may be updated
+                port_status_list = self.ryuapp.get_port_status_list()
+                check_ports = self._check_port_status_list(port_status_list,
+                                                           port_info)
                 LOG.debug("Agent daemon_loop - iteration:%(iter_num)d - "
                           "port information retrieved. "
                           "Elapsed:%(elapsed).3f",
@@ -850,7 +930,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                     LOG.debug("Starting to process devices in:%s",
                               port_info)
                     # If treat devices fails - must resync with plugin
-                    sync = self.process_network_ports(port_info)
+                    sync = self.process_network_ports(port_info, check_ports)
                     LOG.debug("Agent daemon_loop - "
                               "iteration:%(iter_num)d - "
                               "ports processed. Elapsed:%(elapsed).3f",
