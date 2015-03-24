@@ -21,6 +21,7 @@ class OFPort(object):
     def __init__(self, port_name, ofport):
         self.port_name = port_name
         self.ofport = ofport
+        self.ofport_init = ofport
 
     @classmethod
     def from_ofp_port(cls, ofp_port):
