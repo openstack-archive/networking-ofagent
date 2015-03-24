@@ -33,6 +33,7 @@ from neutron.common import constants as n_const
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 
+from networking_ofagent.plugins.ofagent.agent.monitor import PortStatus
 from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
 
@@ -46,6 +47,11 @@ def _mock_port(is_neutron=True, normalized_name=None):
     if normalized_name:
         p.normalized_port_name.return_value = normalized_name
     return p
+
+
+def _make_portstatus(name, reason):
+    port = _mock_port(True, name)
+    return PortStatus(reason=reason, port=port, name=name)
 
 
 class CreateAgentConfigMap(ofa_test_base.OFAAgentTestBase):
@@ -285,10 +291,27 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                               side_effect=Exception()),
             mock.patch.object(self.agent, '_get_ports',
                               return_value=[_mock_port(True, 'xxx')])):
-            self.assertTrue(self.agent.treat_devices_added_or_updated(['xxx']))
+            self.assertTrue(self.agent.treat_devices_added_or_updated(
+                ['xxx'], {}))
+
+    def test__repair_ofport_change(self):
+        port = mock.Mock()
+        port.ofport = '12'
+        port.vif_mac = 'fa:16:3e:d7:0a:d3'
+        net_id = '00a622b1-91a5-4482-8c2f-9f2820957f18'
+        lvm = mock.Mock()
+        lvm.vlan = '1001'
+        self.agent.local_vlan_map[net_id] = lvm
+        with contextlib.nested(
+            mock.patch.object(self.agent.int_br, 'check_in_port_delete_port'),
+            mock.patch.object(self.agent.int_br, 'local_out_delete_port')
+        ) as (in_port_del, out_del):
+            self.agent._repair_ofport_change(port, net_id)
+            in_port_del.assert_called_once_with(port.ofport)
+            out_del.assert_called_once_with(lvm.vlan, port.vif_mac)
 
     def _mock_treat_devices_added_updated(self, details, port, all_ports,
-                                          func_name):
+                                          check_ports, func_name):
         """Mock treat devices added or updated.
 
         :param details: the details to return for the device
@@ -302,11 +325,14 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                               return_value=details),
             mock.patch.object(self.agent, '_get_ports',
                               return_value=all_ports),
+            mock.patch.object(self.agent, '_repair_ofport_change'),
             mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),
             mock.patch.object(self.agent.plugin_rpc, 'update_device_down'),
             mock.patch.object(self.agent, func_name)
-        ) as (get_dev_fn, _get_ports, upd_dev_up, upd_dev_down, func):
-            self.assertFalse(self.agent.treat_devices_added_or_updated([port]))
+        ) as (get_dev_fn, _get_ports, _repair_ofport, upd_dev_up,
+              upd_dev_down, func):
+            self.assertFalse(self.agent.treat_devices_added_or_updated(
+                [port], check_ports))
         _get_ports.assert_called_once_with(self.agent.int_br)
         return func.called
 
@@ -315,14 +341,14 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         p1 = _mock_port(True, port_name)
         p1.ofport = -1
         self.assertFalse(self._mock_treat_devices_added_updated(
-            mock.MagicMock(), port_name, [p1], 'port_dead'))
+            mock.MagicMock(), port_name, [p1], {}, 'port_dead'))
 
     def test_treat_devices_added_updated_marks_unknown_port_as_dead(self):
         port_name = 'hoge'
         p1 = _mock_port(True, port_name)
         p1.ofport = 1
         self.assertTrue(self._mock_treat_devices_added_updated(
-            mock.MagicMock(), port_name, [p1], 'port_dead'))
+            mock.MagicMock(), port_name, [p1], {}, 'port_dead'))
 
     def test_treat_devices_added_does_not_process_missing_port(self):
         with contextlib.nested(
@@ -340,7 +366,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         details = mock.MagicMock()
         details.__contains__.side_effect = lambda x: True
         self.assertTrue(self._mock_treat_devices_added_updated(
-            details, port_name, ports, 'treat_vif_port'))
+            details, port_name, ports, {}, 'treat_vif_port'))
 
     def test_treat_devices_added_updated_put_port_down(self):
         fake_details_dict = {'admin_state_up': False,
@@ -361,10 +387,42 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         ) as (get_dev_fn, _get_ports, upd_dev_up,
               upd_dev_down, treat_vif_port):
             self.assertFalse(self.agent.treat_devices_added_or_updated(
-                ['xxx']))
+                ['xxx'], {}))
             self.assertTrue(treat_vif_port.called)
             self.assertTrue(upd_dev_down.called)
         _get_ports.assert_called_once_with(self.agent.int_br)
+
+    def test_treat_devices_added_updated_repair_flow(self):
+        name1 = 'tapd3315981-0b'
+        name2 = 'tapd3315982-0b'
+        net_id = '00a622b1-91a5-4482-8c2f-9f2820957f18'
+        devices = [name1, name2]
+        p1 = _mock_port(True, name1)
+        p2 = _mock_port(True, name2)
+        all_ports = [p1, p2]
+        details = {'admin_state_up': True,
+                   'port_id': '123',
+                   'device': '456',
+                   'network_id': net_id,
+                   'physical_network': None,
+                   'segmentation_id': '1001',
+                   'network_type': 'vxlan'}
+        ps2 = _make_portstatus('tapd3315982-0b', 'mod')
+        check_ports = {name2: ps2}
+        with contextlib.nested(
+            mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
+                              return_value=details),
+            mock.patch.object(self.agent, '_get_ports',
+                              return_value=all_ports),
+            mock.patch.object(self.agent, '_repair_ofport_change'),
+            mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),
+            mock.patch.object(self.agent.plugin_rpc, 'update_device_down'),
+            mock.patch.object(self.agent, 'treat_vif_port')
+        ) as (get_dev_fn, _get_ports, _repair_ofport, upd_dev_up,
+              upd_dev_down, treat_vif_port):
+            self.assertFalse(self.agent.treat_devices_added_or_updated(
+                devices, check_ports))
+        _repair_ofport.assert_called_once_with(ps2.port, net_id)
 
     def test_treat_devices_removed_returns_true_for_missing_device(self):
         with mock.patch.object(self.agent.plugin_rpc, 'update_device_down',
@@ -385,7 +443,51 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
     def test_treat_devices_removed_ignores_missing_port(self):
         self._mock_treat_devices_removed(False)
 
-    def _test_process_network_ports(self, port_info):
+    def test__check_port_status_list_no_ofport_change(self):
+        port_status_list = [_make_portstatus('tapd3315981-0b', 'del'),
+                            _make_portstatus('tapd3315982-0b', 'del'),
+                            _make_portstatus('tapd3315983-0b', 'del')]
+        port_info = {'current': set()}
+        check_ports = self.agent._check_port_status_list(port_status_list,
+                                                         port_info)
+        self.assertFalse(check_ports)
+        self.assertEqual(port_info, {'current': set()})
+
+    def test__check_port_status_list_ofport_change(self):
+        name1 = 'tapd3315981-0b'
+        name3 = 'tapd3315983-0b'
+        port_status_list = [_make_portstatus(name1, 'del'),
+                            _make_portstatus('tapd3315982-0b', 'del'),
+                            _make_portstatus(name3, 'add')]
+        port_info = {'current': set([name1, name3])}
+        expected_check_ports = {name1: port_status_list[0],
+                                name3: port_status_list[2]}
+        expected_port_info = {'current': set([name1, name3]),
+                              'updated': set([name1, name3])}
+        check_ports = self.agent._check_port_status_list(port_status_list,
+                                                         port_info)
+        self.assertEqual(check_ports, expected_check_ports)
+        self.assertEqual(port_info, expected_port_info)
+
+    def test__check_port_status_list_extend_updated_ports(self):
+        name1 = 'tapd3315981-0b'
+        name3 = 'tapd3315983-0b'
+        name4 = 'tapd3315984-0b'
+        port_status_list = [_make_portstatus(name1, 'del'),
+                            _make_portstatus('tapd3315982-0b', 'del'),
+                            _make_portstatus(name3, 'add')]
+        port_info = {'current': set([name1, name3]),
+                     'updated': set([name4])}
+        expected_check_ports = {name1: port_status_list[0],
+                                name3: port_status_list[2]}
+        expected_port_info = {'current': set([name1, name3]),
+                              'updated': set([name4, name1, name3])}
+        check_ports = self.agent._check_port_status_list(port_status_list,
+                                                         port_info)
+        self.assertEqual(check_ports, expected_check_ports)
+        self.assertEqual(port_info, expected_port_info)
+
+    def _test_process_network_ports(self, port_info, check_ports):
         with contextlib.nested(
             mock.patch.object(self.agent.sg_agent, "setup_port_filters"),
             mock.patch.object(self.agent, "treat_devices_added_or_updated",
@@ -393,25 +495,29 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             mock.patch.object(self.agent, "treat_devices_removed",
                               return_value=False)
         ) as (setup_port_filters, device_added_updated, device_removed):
-            self.assertFalse(self.agent.process_network_ports(port_info))
+            self.assertFalse(self.agent.process_network_ports(port_info,
+                                                              check_ports))
             setup_port_filters.assert_called_once_with(
                 port_info['added'], port_info.get('updated', set()))
             device_added_updated.assert_called_once_with(
-                port_info['added'] | port_info.get('updated', set()))
+                port_info['added'] | port_info.get('updated', set()),
+                check_ports)
             device_removed.assert_called_once_with(port_info['removed'])
 
     def test_process_network_ports(self):
         self._test_process_network_ports(
             {'current': set(['tap0']),
              'removed': set(['eth0']),
-             'added': set(['eth1'])})
+             'added': set(['eth1'])},
+            {})
 
     def test_process_network_port_with_updated_ports(self):
         self._test_process_network_ports(
             {'current': set(['tap0', 'tap1']),
              'updated': set(['tap1', 'eth1']),
              'removed': set(['eth0']),
-             'added': set(['eth1'])})
+             'added': set(['eth1'])},
+            {})
 
     def test_report_state(self):
         with mock.patch.object(self.agent.state_rpc,
