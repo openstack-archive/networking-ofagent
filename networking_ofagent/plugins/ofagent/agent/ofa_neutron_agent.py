@@ -738,6 +738,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             return
         lvm = self.local_vlan_map[net_uuid]
         self.int_br.check_in_port_delete_port(port.ofport)
+        if port.vif_mac is None:
+            return
         self.int_br.local_out_delete_port(lvm.vlan, port.vif_mac)
 
     def treat_devices_added_or_updated(self, devices, check_ports):
@@ -766,9 +768,15 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             if device in check_ports:
                 ps = check_ports[device]
                 if port.ofport != ps.port.ofport:
-                    LOG.debug("Repair ofport changed old port %(old_port)s "
-                        "new port %(new_port)s",
-                        {'old_port': ps.port, 'new_port': port})
+                    ps.port.vif_mac = details.get('mac_address')
+                    LOG.debug("Repair ofport changed old port "
+                              "ofport: %(ofport)s vif_mac: %(mac)s",
+                              {'ofport': ps.port.ofport,
+                               'mac': ps.port.vif_mac})
+                    LOG.debug("Repair ofport changed new port "
+                              "ofport: %(ofport)s vif_mac: %(mac)s",
+                              {'ofport': port.ofport,
+                               'mac': port.vif_mac})
                     self._repair_ofport_change(ps.port, details['network_id'])
             if 'port_id' in details:
                 LOG.info(_LI("Port %(device)s updated. Details: %(details)s"),
