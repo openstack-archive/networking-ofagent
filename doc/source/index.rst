@@ -21,3 +21,11 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
+Developer Docs
+==============
+
+.. toctree::
+    :maxdepth: 1
+
+    devref/index
