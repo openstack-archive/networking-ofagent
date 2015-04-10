@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: YAMAMOTO Takashi <yamamoto@valinux.co.jp>
+Workflow+1: YAMAMOTO Takashi <yamamoto@valinux.co.jp>
+Submitted-by: Jenkins
+Submitted-at: Fri, 10 Apr 2015 02:43:24 +0000
+Reviewed-on: https://review.openstack.org/172287
+Project: stackforge/networking-ofagent
+Branch: refs/heads/master
