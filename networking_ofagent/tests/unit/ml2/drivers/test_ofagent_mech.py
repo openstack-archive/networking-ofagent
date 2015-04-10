@@ -17,7 +17,7 @@ from oslo_config import cfg
 
 from neutron.common import constants
 from neutron.extensions import portbindings
-from neutron.tests.unit.ml2 import _test_mech_agent as base
+from neutron.tests.unit.plugins.ml2 import _test_mech_agent as base
 
 from networking_ofagent.plugins.ml2.drivers import mech_ofagent
 
