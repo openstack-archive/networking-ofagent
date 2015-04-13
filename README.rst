@@ -96,6 +96,11 @@ accordingly.
 External Resources
 ==================
 
+OFAgent documentation on ReadTheDocs
+------------------------------------
+
+http://networking-ofagent.readthedocs.org/en/latest/
+
 Neutron/OFAgent on OpenStack wiki
 ---------------------------------
 
