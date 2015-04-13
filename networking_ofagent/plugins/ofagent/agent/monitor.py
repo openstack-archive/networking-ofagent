@@ -16,9 +16,9 @@
 
 import collections
 
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
-from neutron.common import log
 from neutron.i18n import _LI
 
 from networking_ofagent.plugins.ofagent.agent import ports
@@ -33,7 +33,7 @@ class PortMonitor(object):
     def __init__(self):
         self.port_status_list = []
 
-    @log.log
+    @log_helpers.log_method_call
     def port_status_handler(self, ev):
         msg = ev.msg
         datapath = msg.datapath

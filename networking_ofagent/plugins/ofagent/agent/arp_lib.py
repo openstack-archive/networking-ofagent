@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
 from ryu.app.ofctl import api as ryu_api
@@ -24,7 +25,6 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
 
-from neutron.common import log
 from neutron.i18n import _LI
 
 import networking_ofagent.plugins.ofagent.agent.metadata as meta
@@ -54,7 +54,7 @@ class ArpLib(object):
     def set_bridge(self, br):
         self.br = br
 
-    @log.log
+    @log_helpers.log_method_call
     def _send_arp_reply(self, datapath, port, pkt):
         ofp = datapath.ofproto
         ofpp = datapath.ofproto_parser
@@ -68,7 +68,7 @@ class ArpLib(object):
                                 data=data)
         ryu_api.send_msg(self.ryuapp, out)
 
-    @log.log
+    @log_helpers.log_method_call
     def _send_unknown_packet(self, msg, in_port, out_port):
         datapath = msg.datapath
         ofp = datapath.ofproto
@@ -113,14 +113,14 @@ class ArpLib(object):
         self._send_arp_reply(datapath, port, pkt)
         return True
 
-    @log.log
+    @log_helpers.log_method_call
     def add_arp_table_entry(self, network, ip, mac):
         if network in self._arp_tbl:
             self._arp_tbl[network][ip] = mac
         else:
             self._arp_tbl[network] = {ip: mac}
 
-    @log.log
+    @log_helpers.log_method_call
     def del_arp_table_entry(self, network, ip):
         if network not in self._arp_tbl:
             LOG.debug("removal of unknown network %s", network)

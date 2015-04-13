@@ -23,6 +23,7 @@
 import time
 
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
 from ryu.app.ofctl import api as ryu_api
@@ -39,7 +40,6 @@ from neutron.agent.linux import ovs_lib
 from neutron.agent import rpc as agent_rpc
 from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.common import constants as n_const
-from neutron.common import log
 from neutron.common import topics
 from neutron.common import utils as n_utils
 from neutron import context
@@ -335,7 +335,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             if vif_id in vlan_mapping.vif_ports:
                 return network_id
 
-    @log.log
+    @log_helpers.log_method_call
     def port_update(self, context, **kwargs):
         port = kwargs.get('port')
         # Put the port identifier in the updated_ports set.
@@ -347,7 +347,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
     def _tunnel_port_lookup(self, network_type, _remote_ip):
         return self.tun_ofports.get(network_type)
 
-    @log.log
+    @log_helpers.log_method_call
     def fdb_add(self, context, fdb_entries):
         for lvm, agent_ports in self.get_agent_ports(fdb_entries,
                                                      self.local_vlan_map):
@@ -361,7 +361,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             else:
                 self._fdb_add_arp(lvm, agent_ports)
 
-    @log.log
+    @log_helpers.log_method_call
     def fdb_remove(self, context, fdb_entries):
         for lvm, agent_ports in self.get_agent_ports(fdb_entries,
                                                      self.local_vlan_map):
@@ -375,7 +375,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             else:
                 self._fdb_remove_arp(lvm, agent_ports)
 
-    @log.log
+    @log_helpers.log_method_call
     def _fdb_add_arp(self, lvm, agent_ports):
         for _remote_ip, port_infos in agent_ports.items():
             for port_info in port_infos:
@@ -385,7 +385,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                                                 port_info.ip_address,
                                                 port_info.mac_address)
 
-    @log.log
+    @log_helpers.log_method_call
     def _fdb_remove_arp(self, lvm, agent_ports):
         for _remote_ip, port_infos in agent_ports.items():
             for port_info in port_infos:
@@ -439,7 +439,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         elif action == 'remove':
             self.ryuapp.del_arp_table_entry(local_vid, ip_address)
 
-    @log.log
+    @log_helpers.log_method_call
     def _fdb_chg_ip(self, context, fdb_entries):
         self.fdb_chg_ip_tun(context, self.int_br, fdb_entries, self.local_ip,
                             self.local_vlan_map)
@@ -730,7 +730,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         # We only have one port per network_type.
         pass
 
-    @log.log
+    @log_helpers.log_method_call
     def _repair_ofport_change(self, port, net_uuid):
         if net_uuid not in self.local_vlan_map:
             LOG.info(_LI("_repair_ofport_change() net_uuid %s not in "
