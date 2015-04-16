@@ -35,8 +35,8 @@ from ryu.lib import hub
 from ryu.ofproto import ofproto_v1_3 as ryu_ofp13
 
 from neutron.agent import l2population_rpc
+from neutron.agent.common import ovs_lib
 from neutron.agent.linux import ip_lib
-from neutron.agent.linux import ovs_lib
 from neutron.agent import rpc as agent_rpc
 from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.common import constants as n_const
