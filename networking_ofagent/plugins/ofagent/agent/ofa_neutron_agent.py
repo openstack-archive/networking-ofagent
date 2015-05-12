@@ -43,6 +43,9 @@ from neutron.common import constants as n_const
 from neutron.common import topics
 from neutron.common import utils as n_utils
 from neutron import context
+from neutron.extensions import allowedaddresspairs as addr_pair
+from neutron.extensions import portsecurity as psec
+from neutron.extensions import securitygroup as ext_sg
 from neutron.openstack.common import loopingcall
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.openvswitch.common import constants
@@ -191,7 +194,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
     # history
     #   1.0 Initial version
     #   1.1 Support Security Group RPC
-    target = oslo_messaging.Target(version='1.1')
+    #   1.3 Add updated_attrs to port_update
+    target = oslo_messaging.Target(version='1.3')
 
     def __init__(self, ryuapp, integ_br, local_ip,
                  bridge_mappings, interface_mappings,
@@ -342,7 +346,23 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         # Even if full port details might be provided to this call,
         # they are not used since there is no guarantee the notifications
         # are processed in the same order as the relevant API requests
-        self.updated_ports.add(ports.get_normalized_port_name(port['id']))
+        port_name = ports.get_normalized_port_name(port['id'])
+        updated_attrs = kwargs.get('updated_attrs')
+        full_update_attrs = ['port_binding', 'admin_state']
+        reload_filter_attrs = [ext_sg.SECURITYGROUPS, addr_pair.ADDRESS_PAIRS,
+                               psec.PORTSECURITY, 'security_group_member']
+        if updated_attrs:
+            if any(attr in updated_attrs for attr in full_update_attrs):
+                self.updated_ports.add(port_name)
+                LOG.debug("port_update message processed for port %s,"
+                          " the agent will reprocess the port", port_name)
+            elif any(attr in updated_attrs for attr in reload_filter_attrs):
+                self.sg_agent.devices_to_refilter.add(port_name)
+                LOG.debug("port_update message processed for port %s,"
+                          " reload firewall rules", port_name)
+        else:
+            self.updated_ports.add(port_name)
+            LOG.debug("port_update message processed for port %s", port_name)
 
     def _tunnel_port_lookup(self, network_type, _remote_ip):
         return self.tun_ofports.get(network_type)
