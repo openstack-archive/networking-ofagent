@@ -532,16 +532,39 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                 self.agent.int_br_device_count
             )
 
-    def test_port_update(self):
+    def _test_port_update(self, updated_attrs):
         port = {"id": "b1981919-f516-11e3-a8f4-08606e7f74e7",
-                "network_id": "124",
-                "admin_state_up": False}
+                "network_id": "124"}
         self.agent.port_update("unused_context",
                                port=port,
                                network_type="vlan",
                                segmentation_id="1",
-                               physical_network="physnet")
+                               physical_network="physnet",
+                               updated_attrs=updated_attrs)
         self.assertEqual(set(['tapb1981919-f5']), self.agent.updated_ports)
+
+    def test_port_full_update(self):
+        for attr in ['port_binding', 'admin_state', None]:
+            self._test_port_update(attr)
+
+    def _test_port_update_filter(self, updated_attrs):
+        port = {"id": "b1981919-f516-11e3-a8f4-08606e7f74e7",
+                "network_id": "124"}
+        with mock.patch.object(
+                self.agent.sg_agent.devices_to_refilter, 'add') as f:
+            self.agent.port_update("unused_context",
+                                   port=port,
+                                   network_type="vlan",
+                                   segmentation_id="1",
+                                   physical_network="physnet",
+                                   updated_attrs=updated_attrs)
+            self.assertEqual(set(), self.agent.updated_ports)
+            f.assert_called_with('tapb1981919-f5')
+
+    def test_port_update_only_reapply_filters(self):
+        for attr in ['security-group', 'address_pairs',
+                     'port_security' 'security_group_member']:
+            self._test_port_update_filter(attr)
 
     def test_setup_physical_interfaces(self):
         with mock.patch.object(self.agent.int_br, "add_port") as add_port_fn:
