@@ -26,5 +26,5 @@ except ImportError:
     pass
 
 setuptools.setup(
-    setup_requires=['pbr'],
+    setup_requires=['pbr','ryu>=3.19,<3.29'],
     pbr=True)
