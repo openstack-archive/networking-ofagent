@@ -191,7 +191,9 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
     # history
     #   1.0 Initial version
     #   1.1 Support Security Group RPC
-    target = oslo_messaging.Target(version='1.1')
+    #   1.2 Change security_groups from list to dict for
+    #       security_groups_rule_updated and security_groups_member_updated
+    target = oslo_messaging.Target(version='1.2')
 
     def __init__(self, ryuapp, integ_br, local_ip,
                  bridge_mappings, interface_mappings,
