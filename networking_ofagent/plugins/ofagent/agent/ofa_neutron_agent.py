@@ -26,6 +26,7 @@ from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
+from oslo_service import loopingcall
 from ryu.app.ofctl import api as ryu_api
 from ryu.base import app_manager
 import ryu.cfg as ryu_cfg
@@ -43,7 +44,6 @@ from neutron.common import constants as n_const
 from neutron.common import topics
 from neutron.common import utils as n_utils
 from neutron import context
-from neutron.openstack.common import loopingcall
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.openvswitch.common import constants
 

@@ -210,8 +210,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                               return_value='00:00:00:00:00:01'),
             mock.patch('neutron.agent.linux.utils.get_interface_mac',
                        return_value='00:00:00:00:00:01'),
-            mock.patch('neutron.openstack.common.loopingcall.'
-                       'FixedIntervalLoopingCall',
+            mock.patch('oslo_service.loopingcall.FixedIntervalLoopingCall',
                        new=MockFixedIntervalLoopingCall)):
             self.agent = self.mod_agent.OFANeutronAgent(self.ryuapp, **kwargs)
 
