@@ -191,7 +191,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
     # history
     #   1.0 Initial version
     #   1.1 Support Security Group RPC
-    target = oslo_messaging.Target(version='1.1')
+    #   1.3 Added param devices_to_update to security_groups_provider_updated
+    target = oslo_messaging.Target(version='1.3')
 
     def __init__(self, ryuapp, integ_br, local_ip,
                  bridge_mappings, interface_mappings,
