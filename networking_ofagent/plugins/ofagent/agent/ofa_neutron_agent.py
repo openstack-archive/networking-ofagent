@@ -191,6 +191,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
     # history
     #   1.0 Initial version
     #   1.1 Support Security Group RPC
+    #   1.2 Change security_groups from list to dict for
+    #       security_groups_rule_updated and security_groups_member_updated
     #   1.3 Added param devices_to_update to security_groups_provider_updated
     target = oslo_messaging.Target(version='1.3')
 
