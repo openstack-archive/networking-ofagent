@@ -17,7 +17,8 @@
 from oslo_config import cfg
 
 from neutron.agent.common import config
-from neutron.plugins.openvswitch.common import config as ovs_config
+from neutron.plugins.ml2.drivers.openvswitch.agent.common \
+    import config as ovs_config
 
 
 agent_opts = [
