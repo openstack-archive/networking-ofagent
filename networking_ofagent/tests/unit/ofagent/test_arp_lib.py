@@ -50,8 +50,8 @@ class OFAAgentTestCase(ofa_test_base.OFAAgentTestBase):
         self.arp = importutils.import_module('ryu.lib.packet.arp')
         self.ethernet = importutils.import_module('ryu.lib.packet.ethernet')
         self.vlan = importutils.import_module('ryu.lib.packet.vlan')
-        mock.patch('ryu.lib.packet.packet.Packet',
-                   return_value=self.packet_mod).start()
+        self.mock_packet = mock.patch('ryu.lib.packet.packet.Packet',
+                                       return_value=self.packet_mod).start()
 
         self.ryuapp = 'ryuapp'
         self.inport = '1'
@@ -307,8 +307,7 @@ class TestArpLib(OFAAgentTestCase):
         self._test_packet_in_handler_drop()
 
     def test_packet_in_handler_corrupted(self):
-        mock.patch('ryu.lib.packet.packet.Packet',
-                   side_effect=ValueError).start()
+        self.mock_packet.side_effect = ValueError
         self._test_packet_in_handler_drop()
 
     def test_packet_in_handler_unknown_network(self):
