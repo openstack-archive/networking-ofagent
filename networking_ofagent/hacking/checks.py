@@ -15,6 +15,7 @@
 import re
 
 import pep8
+import six
 
 # Guidelines for writing new hacking checks
 #
@@ -50,7 +51,7 @@ def _regex_for_level(level, hint):
 
 log_translation_hint = re.compile(
     '|'.join('(?:%s)' % _regex_for_level(level, hint)
-             for level, hint in _all_log_levels.iteritems()))
+             for level, hint in six.iteritems(_all_log_levels)))
 
 
 oslo_namespace_imports_dot = re.compile(r"from[\s]*oslo[.]")
