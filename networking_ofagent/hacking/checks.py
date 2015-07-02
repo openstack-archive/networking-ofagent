@@ -50,7 +50,7 @@ def _regex_for_level(level, hint):
 
 log_translation_hint = re.compile(
     '|'.join('(?:%s)' % _regex_for_level(level, hint)
-             for level, hint in _all_log_levels.iteritems()))
+             for level, hint in _all_log_levels.items()))
 
 
 oslo_namespace_imports_dot = re.compile(r"from[\s]*oslo[.]")

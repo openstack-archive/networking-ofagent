@@ -332,7 +332,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                    self._get_ports(br) if p.is_neutron_port())
 
     def get_net_uuid(self, vif_id):
-        for network_id, vlan_mapping in self.local_vlan_map.iteritems():
+        for network_id, vlan_mapping in self.local_vlan_map.items():
             if vif_id in vlan_mapping.vif_ports:
                 return network_id
 
@@ -621,7 +621,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         :param interface_mappings: map physical network names to
                                    interface names.
         """
-        for physical_network, interface_name in interface_mappings.iteritems():
+        for physical_network, interface_name in interface_mappings.items():
             ofport = int(self.int_br.add_port(interface_name))
             self.int_ofports[physical_network] = ofport
 
