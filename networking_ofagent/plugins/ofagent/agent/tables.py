@@ -1,5 +1,6 @@
 # Copyright (C) 2014 VA Linux Systems Japan K.K.
 # Copyright (C) 2014 YAMAMOTO Takashi <yamamoto at valinux co jp>
+# Copyright (C) 2015 Fumihiko Kakuma <kakuma at valinux co jp>
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -29,7 +30,7 @@ _table_id_gen = _seq()
 
 def _table_id():
     """A simple table id allocator."""
-    return _table_id_gen.next()
+    return next(_table_id_gen)
 
 # Supported tunnel types.
 TUNNEL_TYPES = [
