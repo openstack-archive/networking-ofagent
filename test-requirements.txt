@@ -18,3 +18,5 @@ testscenarios>=0.4
 WebTest>=2.0
 oslotest>=1.2.0  # Apache-2.0
 tempest-lib
+
+-e git://git.openstack.org/openstack/neutron.git@stable/kilo#egg=neutron
