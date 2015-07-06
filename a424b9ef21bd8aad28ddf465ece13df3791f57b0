@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: fumihiko kakuma <kakuma@valinux.co.jp>
+Workflow+1: fumihiko kakuma <kakuma@valinux.co.jp>
+Verified+1: Ryu CI <ryu-openstack-review@lists.sourceforge.net>
+Submitted-by: Jenkins
+Submitted-at: Mon, 06 Jul 2015 21:48:20 +0000
+Reviewed-on: https://review.openstack.org/198584
+Project: openstack/networking-ofagent
+Branch: refs/heads/stable/kilo
