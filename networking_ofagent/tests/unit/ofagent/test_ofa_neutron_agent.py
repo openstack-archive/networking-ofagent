@@ -20,7 +20,6 @@
 #    under the License.
 
 import collections
-import contextlib
 import copy
 
 import mock
@@ -140,13 +139,15 @@ class TestOFANeutronAgentBridge(ofa_test_base.OFAAgentTestBase):
         self.assertEqual(mock_get_datapath.call_count, 2)
 
     def test_setup_ofp_default_par(self):
-        with contextlib.nested(
-            mock.patch.object(self.ovs, 'set_protocols'),
-            mock.patch.object(self.ovs, 'set_controller'),
-            mock.patch.object(self.ovs, 'find_datapath_id'),
-            mock.patch.object(self.ovs, 'get_datapath'),
-        ) as (mock_set_protocols, mock_set_controller,
-              mock_find_datapath_id, mock_get_datapath):
+        with mock.patch.object(self.ovs,
+                               'set_protocols') as mock_set_protocols,\
+                mock.patch.object(self.ovs,
+                                  'set_controller') as mock_set_controller,\
+                mock.patch.object(
+                    self.ovs,
+                    'find_datapath_id') as mock_find_datapath_id,\
+                mock.patch.object(self.ovs,
+                                  'get_datapath') as mock_get_datapath:
             self.ovs.setup_ofp()
         mock_set_protocols.assert_called_with('OpenFlow13')
         mock_set_controller.assert_called_with(['tcp:127.0.0.1:6633'])
@@ -156,13 +157,15 @@ class TestOFANeutronAgentBridge(ofa_test_base.OFAAgentTestBase):
 
     def test_setup_ofp_specify_par(self):
         controller_names = ['tcp:192.168.10.10:1234', 'tcp:172.17.16.20:5555']
-        with contextlib.nested(
-            mock.patch.object(self.ovs, 'set_protocols'),
-            mock.patch.object(self.ovs, 'set_controller'),
-            mock.patch.object(self.ovs, 'find_datapath_id'),
-            mock.patch.object(self.ovs, 'get_datapath'),
-        ) as (mock_set_protocols, mock_set_controller,
-              mock_find_datapath_id, mock_get_datapath):
+        with mock.patch.object(self.ovs,
+                               'set_protocols') as mock_set_protocols,\
+                mock.patch.object(self.ovs,
+                                  'set_controller') as mock_set_controller,\
+                mock.patch.object(
+                    self.ovs,
+                    'find_datapath_id') as mock_find_datapath_id,\
+                mock.patch.object(self.ovs,
+                                  'get_datapath') as mock_get_datapath:
             self.ovs.setup_ofp(controller_names=controller_names,
                                protocols='OpenFlow133',
                                retry_max=11)
@@ -172,14 +175,11 @@ class TestOFANeutronAgentBridge(ofa_test_base.OFAAgentTestBase):
         self.assertEqual(mock_find_datapath_id.call_count, 1)
 
     def test_setup_ofp_with_except(self):
-        with contextlib.nested(
-            mock.patch.object(self.ovs, 'set_protocols',
-                              side_effect=RuntimeError),
-            mock.patch.object(self.ovs, 'set_controller'),
-            mock.patch.object(self.ovs, 'find_datapath_id'),
-            mock.patch.object(self.ovs, 'get_datapath'),
-        ) as (mock_set_protocols, mock_set_controller,
-              mock_find_datapath_id, mock_get_datapath):
+        with mock.patch.object(self.ovs, 'set_protocols',
+                               side_effect=RuntimeError),\
+                mock.patch.object(self.ovs, 'set_controller'),\
+                mock.patch.object(self.ovs, 'find_datapath_id'),\
+                mock.patch.object(self.ovs, 'get_datapath'):
             with testtools.ExpectedException(SystemExit):
                 self.ovs.setup_ofp()
 
@@ -201,17 +201,16 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             def start(self, interval=0):
                 self.f()
 
-        with contextlib.nested(
-            mock.patch.object(self.mod_agent.OFANeutronAgent,
-                              'setup_integration_br',
-                              return_value=mock.Mock()),
-            mock.patch.object(self.mod_agent.Bridge,
-                              'get_local_port_mac',
-                              return_value='00:00:00:00:00:01'),
-            mock.patch('neutron.agent.linux.utils.get_interface_mac',
-                       return_value='00:00:00:00:00:01'),
-            mock.patch('oslo_service.loopingcall.FixedIntervalLoopingCall',
-                       new=MockFixedIntervalLoopingCall)):
+        with mock.patch.object(self.mod_agent.OFANeutronAgent,
+                               'setup_integration_br',
+                               return_value=mock.Mock()),\
+                mock.patch.object(self.mod_agent.Bridge,
+                                  'get_local_port_mac',
+                                  return_value='00:00:00:00:00:01'),\
+                mock.patch('neutron.agent.linux.utils.get_interface_mac',
+                           return_value='00:00:00:00:00:01'),\
+                mock.patch('oslo_service.loopingcall.FixedIntervalLoopingCall',
+                           new=MockFixedIntervalLoopingCall):
             self.agent = self.mod_agent.OFANeutronAgent(self.ryuapp, **kwargs)
 
         self.agent.sg_agent = mock.Mock()
@@ -226,12 +225,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
     def mock_scan_ports(self, port_set=None, registered_ports=None,
                         updated_ports=None, port_tags_dict=None):
         port_tags_dict = port_tags_dict or {}
-        with contextlib.nested(
-            mock.patch.object(self.agent, '_get_ofport_names',
-                              return_value=port_set),
-            mock.patch.object(self.agent.int_br, 'get_port_tag_dict',
-                              return_value=port_tags_dict)
-        ):
+        with mock.patch.object(self.agent, '_get_ofport_names',
+                               return_value=port_set),\
+                mock.patch.object(self.agent.int_br, 'get_port_tag_dict',
+                                  return_value=port_tags_dict):
             return self.agent.scan_ports(registered_ports, updated_ports)
 
     def test_scan_ports_returns_current_only_for_unchanged_ports(self):
@@ -285,11 +282,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         self.assertEqual(expected, actual)
 
     def test_treat_devices_added_returns_true_for_missing_device(self):
-        with contextlib.nested(
-            mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
-                              side_effect=Exception()),
-            mock.patch.object(self.agent, '_get_ports',
-                              return_value=[_mock_port(True, 'xxx')])):
+        with mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
+                               side_effect=Exception()),\
+                mock.patch.object(self.agent, '_get_ports',
+                                  return_value=[_mock_port(True, 'xxx')]):
             self.assertTrue(self.agent.treat_devices_added_or_updated(
                 ['xxx'], {}))
 
@@ -301,10 +297,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         lvm = mock.Mock()
         lvm.vlan = '1001'
         self.agent.local_vlan_map[net_id] = lvm
-        with contextlib.nested(
-            mock.patch.object(self.agent.int_br, 'check_in_port_delete_port'),
-            mock.patch.object(self.agent.int_br, 'local_out_delete_port')
-        ) as (in_port_del, out_del):
+        with mock.patch.object(self.agent.int_br,
+                               'check_in_port_delete_port') as in_port_del,\
+                mock.patch.object(self.agent.int_br,
+                                  'local_out_delete_port') as out_del:
             self.agent._repair_ofport_change(port, net_id)
             in_port_del.assert_called_once_with(port.ofport)
             out_del.assert_called_once_with(lvm.vlan, port.vif_mac)
@@ -319,17 +315,17 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         :param func_name: the function that should be called
         :returns: whether the named function was called
         """
-        with contextlib.nested(
-            mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
-                              return_value=details),
-            mock.patch.object(self.agent, '_get_ports',
-                              return_value=all_ports),
-            mock.patch.object(self.agent, '_repair_ofport_change'),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_down'),
-            mock.patch.object(self.agent, func_name)
-        ) as (get_dev_fn, _get_ports, _repair_ofport, upd_dev_up,
-              upd_dev_down, func):
+        with mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
+                               return_value=details),\
+                mock.patch.object(self.agent, '_get_ports',
+                                  return_value=all_ports) as _get_ports,\
+                mock.patch.object(self.agent,
+                                  '_repair_ofport_change'),\
+                mock.patch.object(self.agent.plugin_rpc,
+                                  'update_device_up'),\
+                mock.patch.object(self.agent.plugin_rpc,
+                                  'update_device_down'),\
+                mock.patch.object(self.agent, func_name) as func:
             self.assertFalse(self.agent.treat_devices_added_or_updated(
                 [port], check_ports))
         _get_ports.assert_called_once_with(self.agent.int_br)
@@ -350,11 +346,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             mock.MagicMock(), port_name, [p1], {}, 'port_dead'))
 
     def test_treat_devices_added_does_not_process_missing_port(self):
-        with contextlib.nested(
-            mock.patch.object(self.agent.plugin_rpc, 'get_device_details'),
-            mock.patch.object(self.agent.int_br, 'get_vif_port_by_id',
-                              return_value=None)
-        ) as (get_dev_fn, get_vif_func):
+        with mock.patch.object(self.agent.plugin_rpc,
+                               'get_device_details') as get_dev_fn,\
+                mock.patch.object(self.agent.int_br, 'get_vif_port_by_id',
+                                  return_value=None):
             self.assertFalse(get_dev_fn.called)
 
     def test_treat_devices_added_updated_updates_known_port(self):
@@ -375,16 +370,17 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                              'physical_network': 'foo',
                              'segmentation_id': 'bar',
                              'network_type': 'baz'}
-        with contextlib.nested(
-            mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
-                              return_value=fake_details_dict),
-            mock.patch.object(self.agent, '_get_ports',
-                              return_value=[_mock_port(True, 'xxx')]),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_down'),
-            mock.patch.object(self.agent, 'treat_vif_port')
-        ) as (get_dev_fn, _get_ports, upd_dev_up,
-              upd_dev_down, treat_vif_port):
+        with mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
+                               return_value=fake_details_dict),\
+                mock.patch.object(
+                    self.agent, '_get_ports',
+                    return_value=[_mock_port(True, 'xxx')]) as _get_ports,\
+                mock.patch.object(self.agent.plugin_rpc,
+                                  'update_device_up'),\
+                mock.patch.object(self.agent.plugin_rpc,
+                                  'update_device_down') as upd_dev_down,\
+                mock.patch.object(self.agent,
+                                  'treat_vif_port') as treat_vif_port:
             self.assertFalse(self.agent.treat_devices_added_or_updated(
                 ['xxx'], {}))
             self.assertTrue(treat_vif_port.called)
@@ -408,17 +404,16 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                    'network_type': 'vxlan'}
         ps2 = _make_portstatus('tapd3315982-0b', 'mod')
         check_ports = {name2: ps2}
-        with contextlib.nested(
-            mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
-                              return_value=details),
-            mock.patch.object(self.agent, '_get_ports',
-                              return_value=all_ports),
-            mock.patch.object(self.agent, '_repair_ofport_change'),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),
-            mock.patch.object(self.agent.plugin_rpc, 'update_device_down'),
-            mock.patch.object(self.agent, 'treat_vif_port')
-        ) as (get_dev_fn, _get_ports, _repair_ofport, upd_dev_up,
-              upd_dev_down, treat_vif_port):
+        with mock.patch.object(self.agent.plugin_rpc, 'get_device_details',
+                               return_value=details),\
+                mock.patch.object(self.agent, '_get_ports',
+                                  return_value=all_ports),\
+                mock.patch.object(self.agent,
+                                  '_repair_ofport_change') as _repair_ofport,\
+                mock.patch.object(self.agent.plugin_rpc, 'update_device_up'),\
+                mock.patch.object(self.agent.plugin_rpc,
+                                  'update_device_down'),\
+                mock.patch.object(self.agent, 'treat_vif_port'):
             self.assertFalse(self.agent.treat_devices_added_or_updated(
                 devices, check_ports))
         _repair_ofport.assert_called_once_with(ps2.port, net_id)
@@ -487,13 +482,13 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         self.assertEqual(port_info, expected_port_info)
 
     def _test_process_network_ports(self, port_info, check_ports):
-        with contextlib.nested(
-            mock.patch.object(self.agent.sg_agent, "setup_port_filters"),
-            mock.patch.object(self.agent, "treat_devices_added_or_updated",
-                              return_value=False),
-            mock.patch.object(self.agent, "treat_devices_removed",
-                              return_value=False)
-        ) as (setup_port_filters, device_added_updated, device_removed):
+        with mock.patch.object(self.agent.sg_agent,
+                               "setup_port_filters") as setup_port_filters,\
+                mock.patch.object(
+                    self.agent, "treat_devices_added_or_updated",
+                    return_value=False) as device_added_updated,\
+                mock.patch.object(self.agent, "treat_devices_removed",
+                                  return_value=False) as device_removed:
             self.assertFalse(self.agent.process_network_ports(port_info,
                                                               check_ports))
             setup_port_filters.assert_called_once_with(
@@ -550,11 +545,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             self.assertEqual(111, self.agent.int_ofports["physnet1"])
 
     def test_port_unbound(self):
-        with contextlib.nested(
-            mock.patch.object(self.agent, "reclaim_local_vlan"),
-            mock.patch.object(self.agent, "get_net_uuid",
-                              return_value="netuid12345"),
-        ) as (reclvl_fn, _):
+        with mock.patch.object(self.agent,
+                               "reclaim_local_vlan") as reclvl_fn,\
+                mock.patch.object(self.agent, "get_net_uuid",
+                                  return_value="netuid12345"):
             self.agent.enable_tunneling = True
             lvm = mock.Mock()
             lvm.network_type = "gre"
@@ -589,10 +583,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
     def test_fdb_ignore_network(self):
         self._prepare_l2_pop_ofports()
         fdb_entry = {'net3': {}}
-        with contextlib.nested(
-            mock.patch.object(self.agent, '_setup_tunnel_port'),
-            mock.patch.object(self.agent, 'cleanup_tunnel_port')
-        ) as (add_tun_fn, clean_tun_fn):
+        with mock.patch.object(self.agent,
+                               '_setup_tunnel_port') as add_tun_fn,\
+                mock.patch.object(self.agent,
+                                  'cleanup_tunnel_port') as clean_tun_fn:
             self.agent.fdb_add(None, fdb_entry)
             self.assertFalse(add_tun_fn.called)
             self.agent.fdb_remove(None, fdb_entry)
@@ -608,10 +602,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                       {'agent_ip':
                        [l2pop_rpc.PortInfo('mac', 'ip'),
                         FLOODING_ENTRY]}}}
-        with contextlib.nested(
-            mock.patch.object(self.agent.ryuapp, "add_arp_table_entry"),
-            mock.patch.object(self.agent.ryuapp, "del_arp_table_entry"),
-        ) as (add_fn, del_fn):
+        with mock.patch.object(self.agent.ryuapp,
+                               "add_arp_table_entry") as add_fn,\
+                mock.patch.object(self.agent.ryuapp,
+                                  "del_arp_table_entry") as del_fn:
             self.agent.fdb_add(None, copy.deepcopy(fdb_entry))
             add_fn.assert_called_once_with(12, 'ip', 'mac')
             self.assertFalse(del_fn.called)
@@ -628,11 +622,12 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                       {self.lvms[1].ip:
                        [l2pop_rpc.PortInfo('mac', 'ip'),
                         FLOODING_ENTRY]}}}
-        with contextlib.nested(
-            mock.patch.object(self.agent, '_setup_tunnel_port'),
-            mock.patch.object(self.agent.int_br, 'install_tunnel_output'),
-            mock.patch.object(self.agent.int_br, 'delete_tunnel_output'),
-        ) as (add_tun_fn, install_fn, delete_fn):
+        with mock.patch.object(
+                self.agent, '_setup_tunnel_port') as add_tun_fn,\
+                mock.patch.object(self.agent.int_br,
+                                  'install_tunnel_output') as install_fn,\
+                mock.patch.object(self.agent.int_br,
+                                  'delete_tunnel_output') as delete_fn:
             add_tun_fn.return_value = 2
             self.agent.fdb_add(None, fdb_entry)
             self.assertEqual(2, install_fn.call_count)
@@ -654,10 +649,11 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
                       {self.lvms[1].ip:
                        [l2pop_rpc.PortInfo('mac', 'ip'),
                         FLOODING_ENTRY]}}}
-        with contextlib.nested(
-            mock.patch.object(self.agent.int_br, 'install_tunnel_output'),
-            mock.patch.object(self.agent.int_br, 'delete_tunnel_output'),
-        ) as (install_fn, delete_fn):
+        with mock.patch.object(self.agent.int_br,
+                               'install_tunnel_output') as install_fn,\
+                mock.patch.object(
+                    self.agent.int_br,
+                    'delete_tunnel_output') as delete_fn:
             self.agent.fdb_remove(None, fdb_entry)
             install_fn.assert_called_once_with(10, 12, 22, 1,
                                                set([self.lvms[0].ip]),
@@ -823,11 +819,10 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
             self.assertFalse(del_port_fn.called)
 
     def test__setup_tunnel_port_error_negative(self):
-        with contextlib.nested(
-            mock.patch.object(self.agent.int_br, 'add_tunnel_port',
-                              return_value=ovs_lib.INVALID_OFPORT),
-            mock.patch.object(self.mod_agent.LOG, 'error')
-        ) as (add_tunnel_port_fn, log_error_fn):
+        with mock.patch.object(
+                self.agent.int_br, 'add_tunnel_port',
+                return_value=ovs_lib.INVALID_OFPORT) as add_tunnel_port_fn,\
+                mock.patch.object(self.mod_agent.LOG, 'error') as log_error_fn:
             ofport = self.agent._setup_tunnel_port(
                 self.agent.int_br, 'gre-1', p_const.TYPE_GRE)
             add_tunnel_port_fn.assert_called_once_with(
@@ -897,10 +892,12 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         lvm = mock.Mock()
         lvm.vlan = vlan
         self.agent.local_vlan_map[net] = lvm
-        with contextlib.nested(
-            mock.patch.object(self.agent.int_br, 'check_in_port_delete_port'),
-            mock.patch.object(self.agent.int_br, 'local_out_delete_port'),
-        ) as (check_in_port_delete_port, local_out_delete_port):
+        with mock.patch.object(
+                self.agent.int_br,
+                'check_in_port_delete_port') as check_in_port_delete_port,\
+                mock.patch.object(
+                    self.agent.int_br,
+                    'local_out_delete_port') as local_out_delete_port:
             self.agent.port_dead(port, net_uuid=net)
         check_in_port_delete_port.assert_called_once_with(ofport)
         local_out_delete_port.assert_called_once_with(vlan, mac)
