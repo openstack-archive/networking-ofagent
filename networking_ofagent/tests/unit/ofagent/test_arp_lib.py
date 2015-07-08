@@ -258,14 +258,13 @@ class TestArpLib(OFAAgentTestCase):
     def _test_packet_in_handler(self):
         self.arplib._arp_tbl = {
             self.nets[0].net: {self.nets[0].ip: self.nets[0].mac}}
-        with contextlib.nested(
-            mock.patch.object(self.arplib, '_respond_arp',
-                              return_value=True),
-            mock.patch.object(self.br,
-                              'arp_passthrough'),
-            mock.patch.object(self.arplib,
-                              '_send_unknown_packet'),
-        ) as (res_arp_fn, add_flow_fn, send_unknown_pk_fn):
+        with mock.patch.object(self.arplib, '_respond_arp',
+                               return_value=True) as res_arp_fn,\
+                mock.patch.object(self.br,
+                                  'arp_passthrough') as add_flow_fn,\
+                mock.patch.object(
+                    self.arplib,
+                    '_send_unknown_packet') as send_unknown_pk_fn:
             self.arplib.packet_in_handler(self.ev)
         self.assertFalse(add_flow_fn.call_count)
         self.assertFalse(send_unknown_pk_fn.call_count)
@@ -279,13 +278,12 @@ class TestArpLib(OFAAgentTestCase):
     def _test_packet_in_handler_drop(self):
         self.arplib._arp_tbl = {
             self.nets[0].net: {self.nets[0].ip: self.nets[0].mac}}
-        with contextlib.nested(
-            mock.patch.object(self.arplib, '_respond_arp',
-                              return_value=True),
-            mock.patch.object(self.br, 'arp_passthrough'),
-            mock.patch.object(self.arplib,
-                              '_send_unknown_packet'),
-        ) as (res_arp_fn, add_flow_fn, send_unknown_pk_fn):
+        with mock.patch.object(self.arplib, '_respond_arp',
+                               return_value=True) as res_arp_fn,\
+                mock.patch.object(self.br, 'arp_passthrough') as add_flow_fn,\
+                mock.patch.object(
+                    self.arplib,
+                    '_send_unknown_packet') as send_unknown_pk_fn:
             self.arplib.packet_in_handler(self.ev)
         self.assertFalse(add_flow_fn.call_count)
         self.assertFalse(send_unknown_pk_fn.call_count)
@@ -313,13 +311,12 @@ class TestArpLib(OFAAgentTestCase):
     def test_packet_in_handler_unknown_network(self):
         self.arplib._arp_tbl = {
             self.nets[0].net: {self.nets[0].ip: self.nets[0].mac}}
-        with contextlib.nested(
-            mock.patch.object(self.arplib, '_respond_arp',
-                              return_value=False),
-            mock.patch.object(self.br, 'arp_passthrough'),
-            mock.patch.object(self.arplib,
-                              '_send_unknown_packet'),
-        ) as (res_arp_fn, add_flow_fn, send_unknown_pk_fn):
+        with mock.patch.object(self.arplib, '_respond_arp',
+                               return_value=False) as res_arp_fn,\
+                mock.patch.object(self.br, 'arp_passthrough') as add_flow_fn,\
+                mock.patch.object(
+                    self.arplib,
+                    '_send_unknown_packet') as send_unknown_pk_fn:
             self.arplib.packet_in_handler(self.ev)
         add_flow_fn.assert_called_once_with(
             network=self.nets[0].net,
