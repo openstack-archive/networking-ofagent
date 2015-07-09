@@ -214,8 +214,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         super(OFANeutronAgent, self).__init__()
         self.ryuapp = ryuapp
         # TODO(yamamoto): Remove this VLAN leftover
-        self.available_local_vlans = set(xrange(ofa_const.LOCAL_VLAN_MIN,
-                                                ofa_const.LOCAL_VLAN_MAX))
+        self.available_local_vlans = set(range(ofa_const.LOCAL_VLAN_MIN,
+                                               ofa_const.LOCAL_VLAN_MAX))
         self.tunnel_types = tunnel_types or []
         l2pop_network_types = list(set(self.tunnel_types +
                                        [p_const.TYPE_VLAN,
