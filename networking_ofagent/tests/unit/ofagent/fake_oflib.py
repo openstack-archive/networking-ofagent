@@ -1,5 +1,5 @@
 # Copyright (C) 2014,2015 VA Linux Systems Japan K.K.
-# Copyright (C) 2014 Fumihiko Kakuma <kakuma at valinux co jp>
+# Copyright (C) 2014,2015 Fumihiko Kakuma <kakuma at valinux co jp>
 # Copyright (C) 2014,2015 YAMAMOTO Takashi <yamamoto at valinux co jp>
 # All Rights Reserved.
 #
@@ -65,7 +65,7 @@ def _mkcls(name):
             return self._kwargs[name]
 
         def __repr__(self):
-            args = map(repr, self._args)
+            args = list(map(repr, self._args))
             kwargs = sorted(['%s=%s' % (x, y) for x, y in
                              self._kwargs.items()])
             return '%s(%s)' % (self._name, ', '.join(args + kwargs))
