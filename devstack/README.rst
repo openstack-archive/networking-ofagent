@@ -9,7 +9,7 @@ local.conf recipe to use this::
 
     enable_plugin networking-ofagent https://git.openstack.org/stackforge/networking-ofagent
     Q_PLUGIN=ml2
-    Q_AGENT=ofagent_agent
+    Q_AGENT=ofagent
     Q_ML2_PLUGIN_MECHANISM_DRIVERS=ofagent,l2population
 
 .. [#external_plugins] Externally Hosted Plugins
