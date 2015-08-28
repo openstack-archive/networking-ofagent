@@ -8,13 +8,10 @@ dist/
 doc/build
 *.DS_Store
 *.pyc
-neutron.egg-info/
-neutron/vcsversion.py
-neutron/versioninfo
+networking-ofagent.egg-info/
+networking-ofagent/vcsversion.py
+networking-ofagent/versioninfo
 pbr*.egg/
-quantum.egg-info/
-quantum/vcsversion.py
-quantum/versioninfo
 setuptools*.egg/
 *.log
 *.mo
