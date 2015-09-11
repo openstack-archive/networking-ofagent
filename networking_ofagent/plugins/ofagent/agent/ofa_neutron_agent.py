@@ -241,16 +241,16 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         self.int_br = Bridge(integ_br, self.ryuapp)
         # Stores port update notifications for processing in main loop
         self.updated_ports = set()
-        self.setup_rpc()
-        self.setup_integration_br()
         self.int_ofports = {}
-        self.setup_physical_interfaces(interface_mappings)
         self.local_vlan_map = {}
         self.tun_ofports = {}  # network_type -> tunnel ofport
-        self.polling_interval = polling_interval
-
-        self.enable_tunneling = bool(self.tunnel_types)
         self.local_ip = local_ip
+        self.setup_rpc()
+        self.setup_integration_br()
+        self.setup_physical_interfaces(interface_mappings)
+
+        self.polling_interval = polling_interval
+        self.enable_tunneling = bool(self.tunnel_types)
         self.tunnel_count = 0
         self.vxlan_udp_port = cfg.CONF.AGENT.vxlan_udp_port
         self.dont_fragment = cfg.CONF.AGENT.dont_fragment
