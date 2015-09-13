@@ -34,6 +34,7 @@ from ryu.controller import handler
 from ryu.controller import ofp_event
 from ryu.lib import hub
 from ryu.ofproto import ofproto_v1_3 as ryu_ofp13
+import six
 
 from neutron.agent.common import ovs_lib
 from neutron.agent.linux import ip_lib
@@ -66,7 +67,7 @@ cfg.CONF.import_group('AGENT',
 class LocalVLANMapping(object):
     def __init__(self, vlan, network_type, physical_network, segmentation_id,
                  vif_ports=None):
-        assert(isinstance(vlan, (int, long)))
+        assert(isinstance(vlan, six.integer_types))
         if vif_ports is None:
             vif_ports = {}
         self.vlan = vlan
