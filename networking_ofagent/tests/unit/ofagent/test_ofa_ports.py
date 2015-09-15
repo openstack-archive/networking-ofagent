@@ -35,6 +35,11 @@ class TestOFAgentPorts(base.BaseTestCase):
         self.assertFalse(p1.is_neutron_port())
         self.assertFalse(p2.is_neutron_port())
 
+    def test_port_decode_bytes_type_port_name(self):
+        name = b'foo03b9a237-0b'
+        p = ports.Port(port_name=name, ofport=999)
+        self.assertEqual(p.port_name, 'foo03b9a237-0b')
+
     def test_neutron_port(self):
         for pref in ['qvo', 'qr-', 'qg-', n_const.TAP_DEVICE_PREFIX]:
             name = pref + '03b9a237-0b'

@@ -14,12 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from neutron.common import constants as n_const
 
 
 class OFPort(object):
     def __init__(self, port_name, ofport):
-        self.port_name = port_name
+        if six.PY3 and isinstance(port_name, bytes):
+            self.port_name = port_name.decode(encoding='utf-8')
+        else:
+            self.port_name = port_name
         self.ofport = ofport
 
     @classmethod
