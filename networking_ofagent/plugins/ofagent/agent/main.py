@@ -1,5 +1,5 @@
-# Copyright (C) 2014 VA Linux Systems Japan K.K.
-# Copyright (C) 2014 Fumihiko Kakuma <kakuma at valinux co jp>
+# Copyright (C) 2015 VA Linux Systems Japan K.K.
+# Copyright (C) 2015 Fumihiko Kakuma <kakuma at valinux co jp>
 # Copyright (C) 2014 YAMAMOTO Takashi <yamamoto at valinux co jp>
 # All Rights Reserved.
 #
@@ -15,12 +15,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ryu.lib import hub
-hub.patch()
-
 import sys
 
 from oslo_config import cfg
+from ryu.lib import hub
+hub.patch()
 from ryu.base.app_manager import AppManager
 from ryu import cfg as ryu_cfg
 
