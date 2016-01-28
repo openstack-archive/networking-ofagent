@@ -1,0 +1,10 @@
+Code-Review+2: YAMAMOTO Takashi <yamamoto@midokura.com>
+Code-Review+1: Clint Adams <clint@gcfm.net>
+Code-Review+2: fumihiko kakuma <kakuma@valinux.co.jp>
+Workflow+1: fumihiko kakuma <kakuma@valinux.co.jp>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 28 Jan 2016 20:16:04 +0000
+Reviewed-on: https://review.openstack.org/272802
+Project: openstack/networking-ofagent
+Branch: refs/heads/master
