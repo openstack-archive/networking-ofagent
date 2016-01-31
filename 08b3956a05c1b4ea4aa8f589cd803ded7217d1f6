@@ -1,0 +1,10 @@
+Code-Review+1: YAMAMOTO Takashi <yamamoto@midokura.com>
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Workflow+1: Kyle Mestery <mestery@mestery.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sun, 31 Jan 2016 03:42:15 +0000
+Reviewed-on: https://review.openstack.org/267222
+Project: openstack/networking-ofagent
+Branch: refs/heads/stable/liberty
