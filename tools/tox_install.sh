@@ -18,13 +18,6 @@ neutron_installed=$(python -c "import neutron" 2>/dev/null ; echo $?)
 
 set -ex
 
-install_cmd="pip install"
-if [ "$1" = "constrained" ]; then
-    install_cmd="$install_cmd $2"
-    shift
-fi
-shift
-
 if [ $neutron_installed -eq 0 ]; then
     echo "ALREADY INSTALLED" > /tmp/tox_install.txt
     echo "Neutron already installed; using existing package"
@@ -37,12 +30,12 @@ elif [ -x "$ZUUL_CLONER" ]; then
         git://git.openstack.org \
         openstack/neutron
     cd openstack/neutron
-    $install_cmd -e .
+    pip install -e .
     cd "$cwd"
 else
     echo "PIP HARDCODE" > /tmp/tox_install.txt
-    $install_cmd -U -egit+https://git.openstack.org/openstack/neutron#egg=neutron
+    pip install -U -egit+https://git.openstack.org/openstack/neutron#egg=neutron
 fi
 
-$install_cmd -U $*
+pip install -U $*
 exit $?
