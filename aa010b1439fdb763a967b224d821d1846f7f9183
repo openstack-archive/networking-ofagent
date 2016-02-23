@@ -1,0 +1,9 @@
+Code-Review+2: YAMAMOTO Takashi <yamamoto@midokura.com>
+Code-Review+2: IWAMOTO Toshihiro <iwamoto@valinux.co.jp>
+Workflow+1: IWAMOTO Toshihiro <iwamoto@valinux.co.jp>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 23 Feb 2016 01:16:01 +0000
+Reviewed-on: https://review.openstack.org/281256
+Project: openstack/networking-ofagent
+Branch: refs/heads/master
