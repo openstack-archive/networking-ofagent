@@ -541,7 +541,7 @@ class TestOFANeutronAgent(ofa_test_base.OFAAgentTestBase):
         with mock.patch.object(self.agent.int_br, "add_port") as add_port_fn:
             add_port_fn.return_value = "111"
             self.agent.setup_physical_interfaces({"physnet1": "eth1"})
-            add_port_fn.assert_called_once_with("eth1")
+            add_port_fn.assert_called_once_with("eth1", None)
             self.assertEqual(111, self.agent.int_ofports["physnet1"])
 
     def test_port_unbound(self):

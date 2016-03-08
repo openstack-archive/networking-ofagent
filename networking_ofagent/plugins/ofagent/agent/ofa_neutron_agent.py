@@ -623,7 +623,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                                    interface names.
         """
         for physical_network, interface_name in interface_mappings.items():
-            ofport = int(self.int_br.add_port(interface_name))
+            ofport = int(self.int_br.add_port(interface_name, None))
             self.int_ofports[physical_network] = ofport
 
     def scan_ports(self, registered_ports, updated_ports=None):
