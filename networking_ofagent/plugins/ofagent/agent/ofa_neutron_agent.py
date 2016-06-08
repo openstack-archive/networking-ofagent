@@ -683,8 +683,8 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             # for being treated. If that does not happen, it is a potential
             # error condition of which operators should be aware
             if not vif_port.ofport:
-                LOG.warn(_LW("VIF port: %s has no ofport configured, "
-                             "and might not be able to transmit"),
+                LOG.warning(_LW("VIF port: %s has no ofport configured, "
+                                "and might not be able to transmit"),
                          vif_port.port_name)
             if admin_state_up:
                 self.port_bound(vif_port, network_id, network_type,
@@ -802,7 +802,7 @@ class OFANeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                         self.context, device, self.agent_id, cfg.CONF.host)
                 LOG.info(_LI("Configuration for device %s completed."), device)
             else:
-                LOG.warn(_LW("Device %s not defined on plugin"), device)
+                LOG.warning(_LW("Device %s not defined on plugin"), device)
                 if (port and port.ofport != -1):
                     self.port_dead(port)
         return resync
