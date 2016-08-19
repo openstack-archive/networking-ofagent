@@ -19,8 +19,7 @@ import collections
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
-from neutron.i18n import _LI
-
+from networking_ofagent.i18n import _LI
 from networking_ofagent.plugins.ofagent.agent import ports
 
 LOG = logging.getLogger(__name__)

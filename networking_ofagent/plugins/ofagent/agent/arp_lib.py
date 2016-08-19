@@ -25,8 +25,7 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
 
-from neutron.i18n import _LI
-
+from networking_ofagent.i18n import _LI
 import networking_ofagent.plugins.ofagent.agent.metadata as meta
 
 
