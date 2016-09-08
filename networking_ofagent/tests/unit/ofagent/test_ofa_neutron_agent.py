@@ -32,7 +32,7 @@ from neutron.common import constants as n_const
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 
-from networking_ofagent.plugins.ofagent.agent.monitor import PortStatus
+from networking_ofagent.plugins.ofagent.agent import monitor
 from networking_ofagent.tests.unit.ofagent import ofa_test_base
 
 
@@ -50,7 +50,7 @@ def _mock_port(is_neutron=True, normalized_name=None):
 
 def _make_portstatus(name, reason):
     port = _mock_port(True, name)
-    return PortStatus(reason=reason, port=port, name=name)
+    return monitor.PortStatus(reason=reason, port=port, name=name)
 
 
 class CreateAgentConfigMap(ofa_test_base.OFAAgentTestBase):

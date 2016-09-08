@@ -18,7 +18,7 @@
 import sys
 
 from oslo_config import cfg
-from ryu.base.app_manager import AppManager
+from ryu.base import app_manager
 from ryu import cfg as ryu_cfg
 
 from neutron.common import config as common_config
@@ -32,6 +32,6 @@ def main():
     if ryu_cfg.CONF is not cfg.CONF:
         ryu_cfg.CONF(project='ryu', args=[])
     common_config.setup_logging()
-    AppManager.run_apps([
+    app_manager.AppManager.run_apps([
         'networking_ofagent.plugins.ofagent.agent.ofa_neutron_agent'
     ])
