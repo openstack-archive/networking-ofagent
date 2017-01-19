@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.api.definitions import portbindings
 from oslo_config import cfg
 
 from neutron.common import constants
-from neutron.extensions import portbindings
 from neutron.tests.unit.plugins.ml2 import _test_mech_agent as base
 
 from networking_ofagent.plugins.ml2.drivers import mech_ofagent
