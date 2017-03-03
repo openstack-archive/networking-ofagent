@@ -1,7 +1,0 @@
-[run]
-branch = True
-source = networking_ofagent
-omit = networking_ofagent/tests/*
-
-[report]
-ignore_errors = True
